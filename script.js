@@ -1,16 +1,23 @@
-const signIn = document.getElementById("sign-in");
-const signInForm = document.getElementById("sign-in-form");
-const signInError = document.getElementById("sign-in-error");
-const existingUsers = document.getElementById("existing-users");
-const userButtons = document.getElementById("user-buttons");
-const tracker = document.getElementById("tracker");
-const signedInAs = document.getElementById("signed-in-as");
-const switchUserButton = document.getElementById("switch-user");
-const form = document.getElementById("item-form");
-const list = document.getElementById("item-list");
+const $ = (id) => document.getElementById(id);
 
-const USER_KEY = "assignment-tracker-user";
-let currentUser = "";
+const authSection = $("auth");
+const authForm = $("auth-form");
+const authTitle = $("auth-title");
+const authIntro = $("auth-intro");
+const authSubmit = $("auth-submit");
+const authToggleText = $("auth-toggle-text");
+const authToggle = $("auth-toggle");
+const authError = $("auth-error");
+const confirmField = $("confirm-field");
+const passwordInput = $("password");
+const tracker = $("tracker");
+const signedInAs = $("signed-in-as");
+const logoutButton = $("logout");
+const itemForm = $("item-form");
+const list = $("item-list");
+const listError = $("list-error");
+
+let mode = "login"; // "login" or "signup"
 let items = [];
 
 function sortItems(taskList) {
@@ -22,36 +29,72 @@ function sortItems(taskList) {
   });
 }
 
-function showError(message) {
-  signInError.hidden = !message;
-  signInError.textContent = message;
-}
-
-function userUrl(name) {
-  return `/api/users/${encodeURIComponent(name)}`;
-}
-
-async function loadSavedUsers() {
-  try {
-    const response = await fetch("/api/users");
-    if (!response.ok) {
-      throw new Error("Could not load saved users.");
-    }
-    const data = await response.json();
-    const users = data.users || [];
-    userButtons.replaceChildren();
-    existingUsers.hidden = users.length === 0;
-    users.forEach((name) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.textContent = name;
-      button.addEventListener("click", () => openUser(name));
-      userButtons.append(button);
-    });
-  } catch {
-    existingUsers.hidden = true;
-    showError("Could not reach the tracker server. Run python3 server.py, then refresh.");
+async function api(path, method = "GET", body) {
+  const options = {
+    method,
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+  };
+  if (body) {
+    options.body = JSON.stringify(body);
   }
+  try {
+    const response = await fetch(path, options);
+    let data = {};
+    try {
+      data = await response.json();
+    } catch {
+      // empty or non-JSON body
+    }
+    return { ok: response.ok, status: response.status, data };
+  } catch {
+    return {
+      ok: false,
+      status: 0,
+      data: { error: "Could not reach the tracker server. Run python3 server.py, then refresh." },
+    };
+  }
+}
+
+function setMessage(el, message) {
+  el.hidden = !message;
+  el.textContent = message || "";
+}
+
+function setMode(newMode) {
+  mode = newMode;
+  const signup = mode === "signup";
+  authTitle.textContent = signup ? "Create an account" : "Log in";
+  authIntro.textContent = signup
+    ? "Pick a username and password to get started."
+    : "Log in to see your tasks.";
+  authSubmit.textContent = signup ? "Sign up" : "Log in";
+  authToggleText.textContent = signup ? "Already have an account?" : "New here?";
+  authToggle.textContent = signup ? "Log in" : "Create an account";
+  confirmField.hidden = !signup;
+  $("confirm-password").required = signup;
+  passwordInput.autocomplete = signup ? "new-password" : "current-password";
+  setMessage(authError, "");
+}
+
+function showAuth(message) {
+  items = [];
+  tracker.hidden = true;
+  authSection.hidden = false;
+  authForm.reset();
+  setMode("login");
+  setMessage(authError, message);
+}
+
+function showTracker(user) {
+  items = sortItems(user.items || []);
+  signedInAs.textContent = `Signed in as ${user.username}. Tasks are sorted by due date.`;
+  authSection.hidden = true;
+  tracker.hidden = false;
+  authForm.reset();
+  setMessage(authError, "");
+  setMessage(listError, "");
+  renderItems();
 }
 
 function renderItems() {
@@ -92,68 +135,70 @@ function renderItems() {
 async function saveItems() {
   items = sortItems(items);
   renderItems();
-  const response = await fetch(userUrl(currentUser), {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ items }),
-  });
-  if (!response.ok) {
-    showError("Could not save your tasks.");
+  const result = await api("/api/items", "PUT", { items });
+  if (result.status === 401) {
+    showAuth("Your session expired. Please log in again.");
+  } else if (!result.ok) {
+    setMessage(listError, result.data.error || "Could not save your tasks.");
+  } else {
+    setMessage(listError, "");
   }
 }
 
-async function openUser(name) {
-  const trimmed = name.trim();
-  if (!trimmed) {
+authForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const username = $("username").value.trim();
+  const password = passwordInput.value;
+
+  if (!username || !password) {
+    setMessage(authError, "Enter your username and password.");
     return;
   }
 
-  try {
-    const response = await fetch(userUrl(trimmed));
-    const data = await response.json();
-    if (!response.ok) {
-      showError(data.error || "Could not load that user.");
+  if (mode === "signup") {
+    if (!/^[A-Za-z0-9_.-]{3,30}$/.test(username)) {
+      setMessage(authError, "Username must be 3-30 characters: letters, numbers, . _ -");
       return;
     }
-
-    currentUser = data.name;
-    items = sortItems(data.items || []);
-    sessionStorage.setItem(USER_KEY, currentUser);
-    signedInAs.textContent = `Signed in as ${currentUser}. Tasks are sorted by due date.`;
-    showError("");
-    signIn.hidden = true;
-    tracker.hidden = false;
-    await saveItems();
-  } catch {
-    showError("Could not reach the tracker server. Run python3 server.py, then refresh.");
+    if (password.length < 8) {
+      setMessage(authError, "Password must be at least 8 characters.");
+      return;
+    }
+    if (password !== $("confirm-password").value) {
+      setMessage(authError, "Passwords do not match. Type your password again in the confirm box.");
+      $("confirm-password").focus();
+      return;
+    }
   }
-}
 
-function showSignIn() {
-  currentUser = "";
-  items = [];
-  sessionStorage.removeItem(USER_KEY);
-  tracker.hidden = true;
-  signIn.hidden = false;
-  signInForm.reset();
-  loadSavedUsers();
-}
+  authSubmit.disabled = true;
+  const result = await api(`/api/${mode}`, "POST", { username, password });
+  authSubmit.disabled = false;
 
-signInForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  const name = new FormData(signInForm).get("userName");
-  openUser(String(name || ""));
+  if (result.ok) {
+    showTracker(result.data);
+  } else if (mode === "login" && result.status === 404) {
+    // No such account: move to sign-up, keeping the username they typed.
+    setMode("signup");
+    setMessage(authError, `No account named "${username}" yet. Choose a password to create one.`);
+    $("confirm-password").focus();
+  } else {
+    setMessage(authError, result.data.error || "Something went wrong.");
+  }
 });
 
-switchUserButton.addEventListener("click", showSignIn);
+authToggle.addEventListener("click", () => {
+  setMode(mode === "login" ? "signup" : "login");
+});
 
-form.addEventListener("submit", (event) => {
+logoutButton.addEventListener("click", async () => {
+  await api("/api/logout", "POST");
+  showAuth("");
+});
+
+itemForm.addEventListener("submit", (event) => {
   event.preventDefault();
-  if (!currentUser) {
-    return;
-  }
-
-  const data = new FormData(form);
+  const data = new FormData(itemForm);
   const title = String(data.get("title") || "").trim();
   const className = String(data.get("className") || "").trim();
   const type = String(data.get("type") || "");
@@ -171,13 +216,16 @@ form.addEventListener("submit", (event) => {
     dueDate,
     complete: false,
   });
-  form.reset();
+  itemForm.reset();
   saveItems();
 });
 
-const remembered = sessionStorage.getItem(USER_KEY);
-if (remembered) {
-  openUser(remembered);
-} else {
-  loadSavedUsers();
-}
+// On page load, resume the session if the browser still has a valid cookie.
+(async () => {
+  const result = await api("/api/me");
+  if (result.ok) {
+    showTracker(result.data);
+  } else {
+    showAuth(result.status === 0 ? result.data.error : "");
+  }
+})();

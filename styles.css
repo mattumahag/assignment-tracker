@@ -15,6 +15,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -36,19 +40,43 @@ body {
 }
 
 .header h1,
-#sign-in h1 {
+#auth h1 {
   margin: 0 0 8px;
   font-size: 2rem;
 }
 
 .header p,
-#sign-in p {
+#auth p {
   margin: 0;
   color: var(--muted);
 }
 
-#sign-in p {
+#auth p {
   margin-bottom: 16px;
+}
+
+#auth h2 {
+  margin-bottom: 4px;
+}
+
+#auth .auth-switch {
+  margin: 20px 0 0;
+}
+
+button.link-button {
+  padding: 0;
+  background: none;
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+button.link-button:hover {
+  background: none;
+  color: var(--accent-hover);
+}
+
+.error[hidden] {
+  display: none;
 }
 
 .card {

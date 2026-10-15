@@ -8,28 +8,53 @@
   </head>
   <body>
     <main class="app">
-      <section id="sign-in" class="card" aria-labelledby="sign-in-heading">
-        <h1 id="sign-in-heading">Assignment Tracker</h1>
-        <p>Enter your name to load your saved tasks.</p>
-        <form id="sign-in-form">
+      <section id="auth" class="card" aria-labelledby="auth-title">
+        <h1>Assignment Tracker</h1>
+        <h2 id="auth-title">Log in</h2>
+        <p id="auth-intro">Log in to see your tasks.</p>
+        <form id="auth-form" novalidate>
           <div class="field">
-            <label for="user-name">Your name</label>
+            <label for="username">Username</label>
             <input
-              id="user-name"
-              name="userName"
+              id="username"
+              name="username"
               type="text"
               required
+              minlength="3"
+              maxlength="30"
               autocomplete="username"
-              placeholder="e.g. Matthew"
             />
           </div>
-          <button type="submit">Continue</button>
+          <div class="field">
+            <label for="password">Password</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              minlength="8"
+              maxlength="128"
+              autocomplete="current-password"
+            />
+          </div>
+          <div id="confirm-field" class="field" hidden>
+            <label for="confirm-password">Confirm password</label>
+            <input
+              id="confirm-password"
+              name="confirmPassword"
+              type="password"
+              autocomplete="new-password"
+            />
+          </div>
+          <button id="auth-submit" type="submit">Log in</button>
         </form>
-        <p id="sign-in-error" class="error" hidden></p>
-        <div id="existing-users" class="existing-users" hidden>
-          <h2>Saved users</h2>
-          <div id="user-buttons" class="user-buttons"></div>
-        </div>
+        <p id="auth-error" class="error" role="alert" hidden></p>
+        <p class="auth-switch">
+          <span id="auth-toggle-text">New here?</span>
+          <button id="auth-toggle" class="link-button" type="button">
+            Create an account
+          </button>
+        </p>
       </section>
 
       <div id="tracker" hidden>
@@ -38,9 +63,7 @@
             <h1>Assignment Tracker</h1>
             <p id="signed-in-as">Your upcoming tasks, sorted by due date.</p>
           </div>
-          <button id="switch-user" class="secondary" type="button">
-            Switch user
-          </button>
+          <button id="logout" class="secondary" type="button">Log out</button>
         </header>
 
         <section class="card" aria-labelledby="add-item-heading">
@@ -91,6 +114,7 @@
 
         <section class="card" aria-labelledby="list-heading">
           <h2 id="list-heading">Upcoming</h2>
+          <p id="list-error" class="error" role="alert" hidden></p>
           <ul id="item-list" class="item-list"></ul>
           <p id="empty-state" class="empty-state">Nothing added yet.</p>
         </section>
