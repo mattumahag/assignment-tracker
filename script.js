@@ -80,6 +80,9 @@ function setMode(newMode) {
 function showAuth(message) {
   items = [];
   tracker.hidden = true;
+  recentSection.hidden = true;
+  recentSection.open = false;
+  renderItems();
   authSection.hidden = false;
   authForm.reset();
   setMode("login");
@@ -91,29 +94,92 @@ function showTracker(user) {
   signedInAs.textContent = `Signed in as ${user.username}. Tasks are sorted by due date.`;
   authSection.hidden = true;
   tracker.hidden = false;
+  recentSection.hidden = false;
   authForm.reset();
   setMessage(authError, "");
   setMessage(listError, "");
   renderItems();
 }
 
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const FADE_MS = 550;
+const RECENT_LIMIT = 10;
+
+function typeLabelOf(type) {
+  return type.charAt(0).toUpperCase() + type.slice(1);
+}
+
+// Fade the row out, then mark the task complete so it moves to Recently completed.
+function completeTask(task, itemEl, checkbox) {
+  checkbox.disabled = true;
+  const commit = () => {
+    if (!items.includes(task)) {
+      return; // the user logged out in the meantime
+    }
+    task.complete = true;
+    task.completedAt = Date.now();
+    saveItems();
+  };
+  if (reduceMotion.matches) {
+    commit();
+    return;
+  }
+  itemEl.style.maxHeight = `${itemEl.offsetHeight}px`;
+  void itemEl.offsetHeight; // force a reflow so the transition runs
+  itemEl.classList.add("is-fading");
+  setTimeout(commit, FADE_MS);
+}
+
+function renderRecent() {
+  const recent = items
+    .filter((task) => task.complete)
+    .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0))
+    .slice(0, RECENT_LIMIT);
+
+  recentList.replaceChildren();
+  recent.forEach((task) => {
+    const row = document.createElement("li");
+    row.className = "recent-item";
+
+    const info = document.createElement("div");
+    const titleEl = document.createElement("strong");
+    titleEl.textContent = task.title;
+    const details = document.createElement("span");
+    const when = task.completedAt
+      ? ` · done ${new Date(task.completedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+      : "";
+    details.textContent = `${task.className}${when}`;
+    info.append(titleEl, details);
+
+    const restore = document.createElement("button");
+    restore.type = "button";
+    restore.className = "secondary small";
+    restore.textContent = "Restore";
+    restore.addEventListener("click", () => {
+      task.complete = false;
+      task.completedAt = null;
+      saveItems();
+    });
+
+    row.append(info, restore);
+    recentList.append(row);
+  });
+  recentEmpty.hidden = recent.length > 0;
+}
+
 function renderItems() {
   list.replaceChildren();
-  sortItems(items).forEach((task) => {
+  sortItems(items.filter((task) => !task.complete)).forEach((task) => {
     const item = document.createElement("li");
     item.className = "item";
-    if (task.complete) {
-      item.classList.add("is-complete");
-    }
 
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.id = task.id;
-    checkbox.checked = task.complete;
     checkbox.addEventListener("change", () => {
-      task.complete = checkbox.checked;
-      item.classList.toggle("is-complete", task.complete);
-      saveItems();
+      if (checkbox.checked) {
+        completeTask(task, item, checkbox);
+      }
     });
 
     const label = document.createElement("label");
@@ -122,14 +188,14 @@ function renderItems() {
     const titleEl = document.createElement("strong");
     titleEl.textContent = task.title;
 
-    const typeLabel = task.type.charAt(0).toUpperCase() + task.type.slice(1);
     const details = document.createElement("span");
-    details.textContent = `${task.className} · ${typeLabel} · due ${task.dueDate}`;
+    details.textContent = `${task.className} · ${typeLabelOf(task.type)} · due ${task.dueDate}`;
 
     label.append(titleEl, details);
     item.append(checkbox, label);
     list.append(item);
   });
+  renderRecent();
 }
 
 async function saveItems() {
@@ -218,6 +284,70 @@ itemForm.addEventListener("submit", (event) => {
   });
   itemForm.reset();
   saveItems();
+});
+
+// ---------- Settings menu and theme ----------
+const THEME_KEY = "assignment-tracker-theme";
+const settingsRoot = $("settings");
+const recentSection = $("recent-section");
+const recentList = $("recent-list");
+const recentEmpty = $("recent-empty");
+const settingsButton = $("settings-button");
+const settingsMenu = $("settings-menu");
+const themeRadios = document.querySelectorAll('input[name="theme"]');
+const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+
+function getThemePreference() {
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    return ["system", "light", "dark"].includes(saved) ? saved : "system";
+  } catch {
+    return "system";
+  }
+}
+
+function applyTheme(preference) {
+  const dark = preference === "dark" || (preference === "system" && systemDark.matches);
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+}
+
+function setSettingsOpen(open) {
+  settingsMenu.hidden = !open;
+  settingsButton.setAttribute("aria-expanded", String(open));
+}
+
+themeRadios.forEach((radio) => {
+  radio.checked = radio.value === getThemePreference();
+  radio.addEventListener("change", () => {
+    try {
+      localStorage.setItem(THEME_KEY, radio.value);
+    } catch {
+      // storage unavailable; the choice still applies until the page closes
+    }
+    applyTheme(radio.value);
+  });
+});
+
+// If the computer switches between light and dark, follow it when set to "system".
+systemDark.addEventListener("change", () => {
+  if (getThemePreference() === "system") {
+    applyTheme("system");
+  }
+});
+
+settingsButton.addEventListener("click", () => setSettingsOpen(settingsMenu.hidden));
+
+document.addEventListener("click", (event) => {
+  if (!settingsRoot.contains(event.target)) {
+    setSettingsOpen(false);
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !settingsMenu.hidden) {
+    setSettingsOpen(false);
+    settingsButton.focus();
+  }
 });
 
 // On page load, resume the session if the browser still has a valid cookie.

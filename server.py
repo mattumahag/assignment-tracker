@@ -99,6 +99,9 @@ def clean_items(items):
     for item in items:
         if not isinstance(item, dict):
             continue
+        completed_at = item.get("completedAt")
+        if isinstance(completed_at, bool) or not isinstance(completed_at, (int, float)):
+            completed_at = None
         cleaned.append(
             {
                 "id": str(item.get("id") or ""),
@@ -107,6 +110,7 @@ def clean_items(items):
                 "type": str(item.get("type") or "").strip(),
                 "dueDate": str(item.get("dueDate") or "").strip(),
                 "complete": bool(item.get("complete")),
+                "completedAt": int(completed_at) if completed_at is not None else None,
             }
         )
     return sort_items(cleaned)
@@ -330,3 +334,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    

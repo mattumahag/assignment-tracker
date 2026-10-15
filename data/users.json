@@ -10,7 +10,8 @@
         "className": "t",
         "type": "assignment",
         "dueDate": "2026-10-21",
-        "complete": false
+        "complete": true,
+        "completedAt": 1792034620328
       }
     ]
   }
