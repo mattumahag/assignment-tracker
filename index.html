@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Assignment Tracker</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section id="sign-in" class="card" aria-labelledby="sign-in-heading">
+        <h1 id="sign-in-heading">Assignment Tracker</h1>
+        <p>Enter your name to load your saved tasks.</p>
+        <form id="sign-in-form">
+          <div class="field">
+            <label for="user-name">Your name</label>
+            <input
+              id="user-name"
+              name="userName"
+              type="text"
+              required
+              autocomplete="username"
+              placeholder="e.g. Matthew"
+            />
+          </div>
+          <button type="submit">Continue</button>
+        </form>
+        <p id="sign-in-error" class="error" hidden></p>
+        <div id="existing-users" class="existing-users" hidden>
+          <h2>Saved users</h2>
+          <div id="user-buttons" class="user-buttons"></div>
+        </div>
+      </section>
+
+      <div id="tracker" hidden>
+        <header class="header">
+          <div>
+            <h1>Assignment Tracker</h1>
+            <p id="signed-in-as">Your upcoming tasks, sorted by due date.</p>
+          </div>
+          <button id="switch-user" class="secondary" type="button">
+            Switch user
+          </button>
+        </header>
+
+        <section class="card" aria-labelledby="add-item-heading">
+          <h2 id="add-item-heading">Add an item</h2>
+          <form id="item-form" novalidate>
+            <div class="field">
+              <label for="title">Title</label>
+              <input
+                id="title"
+                name="title"
+                type="text"
+                required
+                autocomplete="off"
+                placeholder="e.g. Chapter 4 homework"
+              />
+            </div>
+
+            <div class="field">
+              <label for="class-name">Class</label>
+              <input
+                id="class-name"
+                name="className"
+                type="text"
+                required
+                autocomplete="off"
+                placeholder="e.g. Biology"
+              />
+            </div>
+
+            <div class="field">
+              <label for="type">Type</label>
+              <select id="type" name="type" required>
+                <option value="" disabled selected>Select a type</option>
+                <option value="assignment">Assignment</option>
+                <option value="test">Test</option>
+                <option value="event">Event</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="due-date">Due date</label>
+              <input id="due-date" name="dueDate" type="date" required />
+            </div>
+
+            <button type="submit">Add to list</button>
+          </form>
+        </section>
+
+        <section class="card" aria-labelledby="list-heading">
+          <h2 id="list-heading">Upcoming</h2>
+          <ul id="item-list" class="item-list"></ul>
+          <p id="empty-state" class="empty-state">Nothing added yet.</p>
+        </section>
+      </div>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
