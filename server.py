@@ -29,6 +29,7 @@ SESSION_SECONDS = 7 * 24 * 60 * 60
 MAX_BODY = 1_000_000
 MAX_CLASSES = 100
 MAX_CLASS_LENGTH = 50
+COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
 # Only these files are served; server.py and data/ are never exposed.
@@ -138,6 +139,23 @@ def get_classes(user):
     if isinstance(user.get("classes"), list):
         return clean_classes(user["classes"])
     return clean_classes([item.get("className") for item in user.get("items", [])])
+
+
+def clean_colors(colors, classes):
+    """One #rrggbb color per class."""
+    if not isinstance(colors, dict):
+        return {}
+    by_lower = {name.lower(): name for name in classes}
+    cleaned = {}
+    for key, value in colors.items():
+        name = by_lower.get(str(key).lower())
+        if name and isinstance(value, str) and COLOR_RE.match(value):
+            cleaned[name] = value.lower()
+    return cleaned
+
+
+def get_colors(user):
+    return clean_colors(user.get("colors", {}), get_classes(user))
 
 
 def valid_date(value):
@@ -278,6 +296,7 @@ class Handler(SimpleHTTPRequestHandler):
                     "items": sort_items(user["items"]),
                     "classes": get_classes(user),
                     "schedules": get_schedules(user),
+                    "colors": get_colors(user),
                 }
             )
             return
@@ -351,11 +370,12 @@ class Handler(SimpleHTTPRequestHandler):
                 "items": [],
                 "classes": [],
                 "schedules": {},
+                "colors": {},
             }
             save_users(users)
 
         self.send_json(
-            {"username": username, "items": [], "classes": [], "schedules": {}},
+            {"username": username, "items": [], "classes": [], "schedules": {}, "colors": {}},
             201,
             self.start_session(key),
         )
@@ -380,6 +400,7 @@ class Handler(SimpleHTTPRequestHandler):
                 "items": sort_items(user["items"]),
                 "classes": get_classes(user),
                 "schedules": get_schedules(user),
+                "colors": get_colors(user),
             },
             200,
             self.start_session(key),
@@ -414,6 +435,8 @@ class Handler(SimpleHTTPRequestHandler):
             if field == "classes":
                 users[key]["schedules"] = clean_schedules(payload.get("schedules"), cleaned)
                 response["schedules"] = users[key]["schedules"]
+                users[key]["colors"] = clean_colors(payload.get("colors"), cleaned)
+                response["colors"] = users[key]["colors"]
             save_users(users)
         self.send_json(response)
 

@@ -33,7 +33,12 @@ const listError = $("list-error");
 let mode = "login"; // "login" or "signup"
 let items = [];
 let classes = [];
-let schedules = {}; // class name -> { days: [0-6], start, end }
+let schedules = {}; // class name -> { days: [0-6], start, end, until }
+let colors = {}; // class name -> "#rrggbb"
+const DEFAULT_COLORS = [
+  "#2563eb", "#e11d48", "#059669", "#d97706", "#7c3aed", "#0891b2",
+  "#db2777", "#65a30d", "#ea580c", "#4f46e5", "#0d9488", "#a16207",
+];
 const MAX_CLASSES = 100;
 const WEEK_STARTS_ON = 0; // first column of the calendar: 0 = Sunday, 1 = Monday
 const UPCOMING_DAYS = 7; // "this week" means due within this many days from today
@@ -112,6 +117,7 @@ function showAuth(message) {
   classesSection.open = false;
   classes = [];
   schedules = {};
+  colors = {};
   seriesSection.hidden = true;
   seriesSection.open = false;
   renderClasses();
@@ -134,12 +140,17 @@ function showTracker(user) {
   classesSection.hidden = false;
   classes = user.classes || [];
   schedules = user.schedules || {};
+  colors = user.colors || {};
+  const needsColors = assignMissingColors();
   seriesSection.hidden = false;
   calendarMonth = startOfMonth(new Date());
   selectedDay = localISO(new Date());
   renderClasses();
   setMessage(formError, "");
   setMessage(classError, "");
+  if (needsColors) {
+    saveClasses(); // older classes get their default colors saved once
+  }
   authForm.reset();
   setMessage(authError, "");
   setMessage(listError, "");
@@ -228,6 +239,7 @@ function weekBounds() {
 function buildItemRow(task) {
   const item = document.createElement("li");
   item.className = "item";
+  paint(item, task.className);
 
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
@@ -277,6 +289,50 @@ const GROUPS = [
   { key: "week", title: "Due this week" },
   { key: "later", title: "Due later" },
 ];
+
+// ---------- Class colors ----------
+function nextDefaultColor() {
+  const used = new Set(Object.values(colors).map((color) => color.toLowerCase()));
+  return (
+    DEFAULT_COLORS.find((color) => !used.has(color)) ||
+    DEFAULT_COLORS[Object.keys(colors).length % DEFAULT_COLORS.length]
+  );
+}
+
+function assignMissingColors() {
+  let changed = false;
+  classes.forEach((name) => {
+    if (!colors[name]) {
+      colors[name] = nextDefaultColor();
+      changed = true;
+    }
+  });
+  return changed;
+}
+
+function colorFor(name) {
+  const key = Object.keys(colors).find((k) => k.toLowerCase() === String(name).toLowerCase());
+  if (key) {
+    return colors[key];
+  }
+  let hash = 0; // a class that was removed keeps a steady color of its own
+  for (const ch of String(name)) {
+    hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  }
+  return DEFAULT_COLORS[hash % DEFAULT_COLORS.length];
+}
+
+function inkFor(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  const brightness = (((n >> 16) & 255) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000;
+  return brightness > 150 ? "#111827" : "#ffffff";
+}
+
+function paint(element, className) {
+  const color = colorFor(className);
+  element.style.setProperty("--c", color);
+  element.style.setProperty("--c-ink", inkFor(color));
+}
 
 function startOfMonth(date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
@@ -661,19 +717,37 @@ function renderClasses() {
     remove.addEventListener("click", () => {
       classes = classes.filter((c) => c !== name);
       delete schedules[name];
+      delete colors[name];
       setMessage(classError, "");
       saveClasses();
     });
-    row.append(info, remove);
+    const picker = document.createElement("input");
+    picker.type = "color";
+    picker.className = "color-input";
+    picker.value = colorFor(name);
+    picker.setAttribute("aria-label", `Color for ${name}`);
+    picker.addEventListener("input", () => {
+      colors[name] = picker.value;
+      renderItems(); // live preview while dragging
+    });
+    picker.addEventListener("change", () => {
+      colors[name] = picker.value;
+      saveClasses();
+    });
+    const actions = document.createElement("div");
+    actions.className = "class-actions";
+    actions.append(picker, remove);
+    row.append(info, actions);
     classList.append(row);
   });
   classEmpty.hidden = classes.length > 0;
+  classColor.value = nextDefaultColor(); // the suggestion for the next new class
   renderCalendar();
 }
 
 async function saveClasses() {
   renderClasses();
-  const result = await api("/api/classes", "PUT", { classes, schedules });
+  const result = await api("/api/classes", "PUT", { classes, schedules, colors });
   if (result.status === 401) {
     showAuth("Your session expired. Please log in again.");
   } else if (!result.ok) {
@@ -729,6 +803,7 @@ classForm.addEventListener("submit", (event) => {
   if (!existing) {
     classes.push(name);
     classes.sort(byName);
+    colors[name] = classColor.value;
   }
   if (days.length) {
     schedules[finalName] = { days, start, end: start ? end : "", until };
@@ -784,6 +859,8 @@ const classDays = $("class-days");
 const classStart = $("class-start");
 const classEnd = $("class-end");
 const classUntil = $("class-until");
+const classColor = $("class-color");
+const legendEl = $("legend");
 const seriesSection = $("series-section");
 const seriesList = $("series-list");
 const seriesEmpty = $("series-empty");
@@ -890,15 +967,34 @@ function dayEntries(date, iso, tasksByDate) {
 function entryChip(entry) {
   const chip = document.createElement("span");
   if (entry.kind === "task") {
-    chip.className = `chip chip-${entry.task.type}`;
+    chip.className = `chip chip-task${entry.task.type === "test" ? " is-test" : ""}`;
+    paint(chip, entry.task.className);
     chip.textContent = entry.task.title;
     chip.title = `${entry.task.title} (${entry.task.className})`;
   } else {
-    chip.className = "chip chip-class";
+    chip.className = "chip chip-meeting";
+    paint(chip, entry.name);
     chip.textContent = `${compactTime(entry.start)} ${entry.name}`.trim();
     chip.title = `${entry.name} class${entry.start ? ` at ${timeLabel(entry.start)}` : ""}`;
   }
   return chip;
+}
+
+function renderLegend() {
+  legendEl.replaceChildren();
+  const addItem = (text, swatchClass, className) => {
+    const li = document.createElement("li");
+    const swatch = document.createElement("span");
+    swatch.className = `swatch ${swatchClass}`;
+    if (className) {
+      paint(swatch, className);
+    }
+    li.append(swatch, document.createTextNode(text));
+    legendEl.append(li);
+  };
+  classes.forEach((name) => addItem(name, "", name));
+  addItem("Solid = test", "", "");
+  addItem("Dashed = class meeting", "swatch-meeting", "");
 }
 
 function renderDayDetail(tasksByDate) {
@@ -923,11 +1019,13 @@ function renderDayDetail(tasksByDate) {
     const title = document.createElement("strong");
     const meta = document.createElement("span");
     if (entry.kind === "task") {
-      row.className = `detail-item chip-${entry.task.type}`;
+      row.className = "detail-item is-task";
+      paint(row, entry.task.className);
       title.textContent = entry.task.title;
       meta.textContent = `Due · ${entry.task.className} · ${typeLabelOf(entry.task.type)}`;
     } else {
-      row.className = "detail-item chip-class";
+      row.className = "detail-item is-meeting";
+      paint(row, entry.name);
       title.textContent = entry.name;
       const range = entry.start ? `${timeLabel(entry.start)}${entry.end ? `–${timeLabel(entry.end)}` : ""}` : "";
       meta.textContent = range ? `Class · ${range}` : "Class";
@@ -1011,6 +1109,7 @@ function renderCalendar() {
     calendarEl.append(cell);
   }
   renderDayDetail(tasksByDate);
+  renderLegend();
 }
 
 $("cal-prev").addEventListener("click", () => {

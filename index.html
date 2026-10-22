@@ -49,6 +49,7 @@
                 placeholder="e.g. Biology"
                 aria-label="New class name"
               />
+              <input id="class-color" class="color-input" type="color" aria-label="Color for the new class" />
               <button type="submit" class="small">Add</button>
             </div>
             <div id="class-days" class="day-picker" role="group" aria-label="Days this class meets"></div>
@@ -172,12 +173,7 @@
                   </div>
                   <div id="calendar" class="calendar"></div>
                   <div id="day-detail" class="day-detail" hidden></div>
-                  <ul class="legend" aria-label="Legend">
-                    <li><span class="swatch chip-assignment"></span>Assignment</li>
-                    <li><span class="swatch chip-test"></span>Test</li>
-                    <li><span class="swatch chip-event"></span>Event</li>
-                    <li><span class="swatch chip-class"></span>Class meeting</li>
-                  </ul>
+                  <ul id="legend" class="legend" aria-label="Legend"></ul>
                 </section>
 
                 <details id="add-section" class="card add-section">
