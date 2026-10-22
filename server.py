@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Assignment Tracker server: accounts, hashed passwords, per-user tasks."""
 
+from datetime import date
 from http.cookies import SimpleCookie
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -26,6 +27,9 @@ PASSWORD_MIN, PASSWORD_MAX = 8, 128
 PBKDF2_ITERATIONS = 600_000
 SESSION_SECONDS = 7 * 24 * 60 * 60
 MAX_BODY = 1_000_000
+MAX_CLASSES = 100
+MAX_CLASS_LENGTH = 50
+TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
 # Only these files are served; server.py and data/ are never exposed.
 STATIC_FILES = {
@@ -111,9 +115,73 @@ def clean_items(items):
                 "dueDate": str(item.get("dueDate") or "").strip(),
                 "complete": bool(item.get("complete")),
                 "completedAt": int(completed_at) if completed_at is not None else None,
+                "seriesId": str(item.get("seriesId") or "")[:64],
             }
         )
     return sort_items(cleaned)
+
+
+def clean_classes(classes):
+    """Trim, drop blanks, and keep one entry per name (case-insensitive)."""
+    seen = {}
+    for name in classes:
+        if not isinstance(name, str):
+            continue
+        name = " ".join(name.split())[:MAX_CLASS_LENGTH]
+        if name and name.lower() not in seen:
+            seen[name.lower()] = name
+    return sorted(seen.values(), key=str.lower)[:MAX_CLASSES]
+
+
+def get_classes(user):
+    """Accounts made before classes existed get theirs from their saved tasks."""
+    if isinstance(user.get("classes"), list):
+        return clean_classes(user["classes"])
+    return clean_classes([item.get("className") for item in user.get("items", [])])
+
+
+def valid_date(value):
+    """Return value if it is a real YYYY-MM-DD date, otherwise an empty string."""
+    if not isinstance(value, str) or not re.match(r"^\d{4}-\d{2}-\d{2}$", value):
+        return ""
+    try:
+        date.fromisoformat(value)
+    except ValueError:
+        return ""
+    return value
+
+
+def clean_schedules(schedules, classes):
+    """Meeting days/times per class; weekdays are 0 (Sunday) to 6 (Saturday)."""
+    if not isinstance(schedules, dict):
+        return {}
+    by_lower = {name.lower(): name for name in classes}
+    cleaned = {}
+    for key, value in schedules.items():
+        name = by_lower.get(str(key).lower())
+        if not name or not isinstance(value, dict) or not isinstance(value.get("days"), list):
+            continue
+        days = sorted(
+            {d for d in value["days"] if isinstance(d, int) and not isinstance(d, bool) and 0 <= d <= 6}
+        )
+        if not days:
+            continue
+        times = []
+        for field in ("start", "end"):
+            t = value.get(field)
+            times.append(t if isinstance(t, str) and TIME_RE.match(t) else "")
+        start, end = times
+        cleaned[name] = {
+            "days": days,
+            "start": start,
+            "end": end if start else "",
+            "until": valid_date(value.get("until")),
+        }
+    return cleaned
+
+
+def get_schedules(user):
+    return clean_schedules(user.get("schedules", {}), get_classes(user))
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -122,6 +190,13 @@ class Handler(SimpleHTTPRequestHandler):
 
     def log_message(self, format, *args):
         print("%s - %s" % (self.address_string(), format % args))
+
+    def end_headers(self):
+        # Make browsers re-check files each visit, so updates show up without a hard refresh.
+        sent = getattr(self, "_headers_buffer", [])
+        if not any(line.lower().startswith(b"cache-control") for line in sent):
+            self.send_header("Cache-Control", "no-cache")
+        super().end_headers()
 
     # ---------- helpers ----------
 
@@ -198,7 +273,12 @@ class Handler(SimpleHTTPRequestHandler):
                 self.send_json({"error": "Not signed in."}, 401)
                 return
             self.send_json(
-                {"username": user["username"], "items": sort_items(user["items"])}
+                {
+                    "username": user["username"],
+                    "items": sort_items(user["items"]),
+                    "classes": get_classes(user),
+                    "schedules": get_schedules(user),
+                }
             )
             return
 
@@ -269,11 +349,15 @@ class Handler(SimpleHTTPRequestHandler):
                 "salt": salt.hex(),
                 "hash": pw_hash.hex(),
                 "items": [],
+                "classes": [],
+                "schedules": {},
             }
             save_users(users)
 
         self.send_json(
-            {"username": username, "items": []}, 201, self.start_session(key)
+            {"username": username, "items": [], "classes": [], "schedules": {}},
+            201,
+            self.start_session(key),
         )
 
     def handle_login(self, username, key, password):
@@ -291,13 +375,19 @@ class Handler(SimpleHTTPRequestHandler):
             return
 
         self.send_json(
-            {"username": user["username"], "items": sort_items(user["items"])},
+            {
+                "username": user["username"],
+                "items": sort_items(user["items"]),
+                "classes": get_classes(user),
+                "schedules": get_schedules(user),
+            },
             200,
             self.start_session(key),
         )
 
     def do_PUT(self):
-        if self.path.split("?", 1)[0] != "/api/items":
+        path = self.path.split("?", 1)[0]
+        if path not in ("/api/items", "/api/classes"):
             self.send_error(404, "Not found")
             return
 
@@ -306,21 +396,26 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_json({"error": "Not signed in."}, 401)
             return
 
+        field = "items" if path == "/api/items" else "classes"
         payload = self.read_json()
-        items = payload.get("items") if payload else None
-        if not isinstance(items, list):
-            self.send_json({"error": "Tasks must be a list."}, 400)
+        value = payload.get(field) if payload else None
+        if not isinstance(value, list):
+            self.send_json({"error": f"{field.capitalize()} must be a list."}, 400)
             return
 
-        cleaned = clean_items(items)
+        cleaned = clean_items(value) if field == "items" else clean_classes(value)
         with lock:
             users = load_users()
             if key not in users:
                 self.send_json({"error": "Not signed in."}, 401)
                 return
-            users[key]["items"] = cleaned
+            users[key][field] = cleaned
+            response = {field: cleaned}
+            if field == "classes":
+                users[key]["schedules"] = clean_schedules(payload.get("schedules"), cleaned)
+                response["schedules"] = users[key]["schedules"]
             save_users(users)
-        self.send_json({"items": cleaned})
+        self.send_json(response)
 
 
 def main():

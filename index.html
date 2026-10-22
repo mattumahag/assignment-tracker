@@ -24,7 +24,7 @@
     <div id="settings" class="settings">
       <button
         id="settings-button"
-        class="secondary settings-button"
+        class="settings-button"
         type="button"
         aria-haspopup="true"
         aria-expanded="false"
@@ -37,6 +37,43 @@
         Settings
       </button>
       <div id="settings-menu" class="settings-menu" hidden>
+        <details id="classes-section" class="settings-section" hidden>
+          <summary>Classes</summary>
+          <form id="class-form" class="class-form" novalidate>
+            <div class="class-row">
+              <input
+                id="new-class"
+                type="text"
+                maxlength="50"
+                autocomplete="off"
+                placeholder="e.g. Biology"
+                aria-label="New class name"
+              />
+              <button type="submit" class="small">Add</button>
+            </div>
+            <div id="class-days" class="day-picker" role="group" aria-label="Days this class meets"></div>
+            <div class="time-row">
+              <label>Start <input id="class-start" type="time" /></label>
+              <label>End <input id="class-end" type="time" /></label>
+            </div>
+            <label>
+              Ends on (optional)
+              <input id="class-until" type="date" />
+            </label>
+            <p class="hint">
+              Days, times and an end date are optional and put the class on the calendar.
+              To change a schedule, add the class again.
+            </p>
+          </form>
+          <p id="class-error" class="error" role="alert" hidden></p>
+          <ul id="class-list" class="class-list"></ul>
+          <p id="class-empty" class="empty-state">No classes yet.</p>
+        </details>
+        <details id="series-section" class="settings-section" hidden>
+          <summary>Repeating tasks</summary>
+          <ul id="series-list" class="recent-list"></ul>
+          <p id="series-empty" class="empty-state">No repeating tasks.</p>
+        </details>
         <details id="recent-section" class="settings-section" hidden>
           <summary>Recently completed</summary>
           <ul id="recent-list" class="recent-list"></ul>
@@ -121,58 +158,107 @@
           <button id="logout" class="secondary" type="button">Log out</button>
         </header>
 
-        <section class="card" aria-labelledby="add-item-heading">
-          <h2 id="add-item-heading">Add an item</h2>
-          <form id="item-form" novalidate>
-            <div class="field">
-              <label for="title">Title</label>
-              <input
-                id="title"
-                name="title"
-                type="text"
-                required
-                autocomplete="off"
-                placeholder="e.g. Chapter 4 homework"
-              />
-            </div>
+        <div class="layout">
+          <div class="main-col">
+                <section class="card" aria-labelledby="calendar-heading">
+                  <div class="calendar-head">
+                    <h2 id="calendar-heading">Calendar</h2>
+                    <div class="calendar-nav">
+                      <button id="cal-prev" class="secondary small" type="button" aria-label="Previous month">&lsaquo;</button>
+                      <span id="cal-title" class="cal-title" aria-live="polite"></span>
+                      <button id="cal-next" class="secondary small" type="button" aria-label="Next month">&rsaquo;</button>
+                      <button id="cal-today" class="secondary small" type="button">Today</button>
+                    </div>
+                  </div>
+                  <div id="calendar" class="calendar"></div>
+                  <div id="day-detail" class="day-detail" hidden></div>
+                  <ul class="legend" aria-label="Legend">
+                    <li><span class="swatch chip-assignment"></span>Assignment</li>
+                    <li><span class="swatch chip-test"></span>Test</li>
+                    <li><span class="swatch chip-event"></span>Event</li>
+                    <li><span class="swatch chip-class"></span>Class meeting</li>
+                  </ul>
+                </section>
 
-            <div class="field">
-              <label for="class-name">Class</label>
-              <input
-                id="class-name"
-                name="className"
-                type="text"
-                required
-                autocomplete="off"
-                placeholder="e.g. Biology"
-              />
-            </div>
+                <details id="add-section" class="card add-section">
+                  <summary>Add an item</summary>
+                  <form id="item-form" novalidate>
+                    <div class="field">
+                      <label for="title">Title</label>
+                      <input
+                        id="title"
+                        name="title"
+                        type="text"
+                        required
+                        autocomplete="off"
+                        placeholder="e.g. Chapter 4 homework"
+                      />
+                    </div>
 
-            <div class="field">
-              <label for="type">Type</label>
-              <select id="type" name="type" required>
-                <option value="" disabled selected>Select a type</option>
-                <option value="assignment">Assignment</option>
-                <option value="test">Test</option>
-                <option value="event">Event</option>
-              </select>
-            </div>
+                    <div class="field">
+                      <label for="class-name">Class</label>
+                      <select id="class-name" name="className" required>
+                        <option value="" disabled selected>No classes yet</option>
+                      </select>
+                      <p id="class-hint" class="hint" hidden>
+                        No classes yet.
+                        <button id="open-classes" class="link-button" type="button">Add one in Settings</button>
+                      </p>
+                    </div>
 
-            <div class="field">
-              <label for="due-date">Due date</label>
-              <input id="due-date" name="dueDate" type="date" required />
-            </div>
+                    <div class="field">
+                      <label for="type">Type</label>
+                      <select id="type" name="type" required>
+                        <option value="" disabled selected>Select a type</option>
+                        <option value="assignment">Assignment</option>
+                        <option value="test">Test</option>
+                        <option value="event">Event</option>
+                      </select>
+                    </div>
 
-            <button type="submit">Add to list</button>
-          </form>
-        </section>
+                    <div class="field">
+                      <label id="due-label" for="due-date">Due date</label>
+                      <input id="due-date" name="dueDate" type="date" required />
+                    </div>
 
-        <section class="card" aria-labelledby="list-heading">
-          <h2 id="list-heading">Upcoming</h2>
-          <p id="list-error" class="error" role="alert" hidden></p>
-          <ul id="item-list" class="item-list"></ul>
-          <p id="empty-state" class="empty-state">No upcoming tasks.</p>
-        </section>
+                    <label class="check-filter">
+                      <input id="repeat-toggle" type="checkbox" />
+                      Repeats weekly
+                    </label>
+                    <div id="repeat-options" class="repeat-options" hidden>
+                      <div class="field">
+                        <span id="repeat-on-label" class="field-label">Repeat on</span>
+                        <div id="repeat-days" class="day-picker" role="group" aria-labelledby="repeat-on-label"></div>
+                      </div>
+                      <div class="field">
+                        <label for="repeat-until">Ends on</label>
+                        <input id="repeat-until" name="repeatUntil" type="date" />
+                      </div>
+                    </div>
+
+                    <button type="submit">Add to list</button>
+                    <p id="form-error" class="error" role="alert" hidden></p>
+                  </form>
+                </details>
+          </div>
+
+            <section class="card side-col" aria-labelledby="list-heading">
+              <h2 id="list-heading">Upcoming</h2>
+              <div id="filters" class="filters" hidden>
+                <select id="filter-class" aria-label="Filter by class"></select>
+                <label class="check-filter">
+                  <input id="filter-week" type="checkbox" />
+                  This week only
+                </label>
+                <button id="clear-filters" class="link-button" type="button" hidden>
+                  Clear filters
+                </button>
+              </div>
+              <p id="list-error" class="error" role="alert" hidden></p>
+              <div id="item-sections"></div>
+              <p id="empty-state" class="empty-state">No upcoming tasks.</p>
+            </section>
+        </div>
       </div>
     </main>
 

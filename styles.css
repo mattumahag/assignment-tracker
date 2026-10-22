@@ -13,6 +13,14 @@
   --accent-soft: #eaf4f0;
   --accent-ink: #fff;
   --error: #9b2c2c;
+  --assignment-bg: #dce9fb;
+  --assignment-ink: #1d3f72;
+  --test-bg: #fbe0dc;
+  --test-ink: #8a2a1f;
+  --event-bg: #ebe1f8;
+  --event-ink: #4b2a7a;
+  --class-bg: #ebe7da;
+  --class-ink: #4a4f5c;
   font-family: "Segoe UI", system-ui, sans-serif;
 }
 
@@ -31,6 +39,14 @@
   --input-bg: #14171c;
   --error: #f28b82;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  --assignment-bg: #1f3350;
+  --assignment-ink: #bcd3f5;
+  --test-bg: #4a2420;
+  --test-ink: #f3b9b1;
+  --event-bg: #382a52;
+  --event-ink: #d6c3f2;
+  --class-bg: #2b3038;
+  --class-ink: #c3c8d2;
 }
 
 * {
@@ -49,7 +65,7 @@ body {
 }
 
 .app {
-  width: min(720px, calc(100% - 32px));
+  width: min(1180px, calc(100% - 32px));
   margin: 64px auto 64px;
 }
 
@@ -251,9 +267,6 @@ button.secondary:hover {
   color: var(--muted);
 }
 
-.item-list:not(:empty) + .empty-state {
-  display: none;
-}
 
 .settings {
   position: fixed;
@@ -266,7 +279,6 @@ button.settings-button {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: var(--card);
 }
 
 .settings-button svg {
@@ -278,7 +290,7 @@ button.settings-button {
   position: absolute;
   top: 52px;
   left: 0;
-  width: 300px;
+  width: 340px;
   max-width: calc(100vw - 32px);
   max-height: calc(100vh - 80px);
   overflow-y: auto;
@@ -328,7 +340,7 @@ button.settings-button {
 }
 
 .settings-section .empty-state {
-  padding-bottom: 12px;
+  padding: 8px 0 12px;
   font-size: 0.9rem;
 }
 
@@ -407,5 +419,486 @@ button.small {
 @media (prefers-reduced-motion: reduce) {
   .item {
     transition: none;
+  }
+}
+
+.settings-section .error {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+}
+
+.class-form {
+  display: grid;
+  gap: 10px;
+}
+
+.class-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.class-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.time-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.time-row label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.82rem;
+}
+
+.class-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 0;
+  list-style: none;
+}
+
+.class-list:empty {
+  display: none;
+}
+
+.class-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.class-item div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.class-item strong {
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+.class-item span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+/* Add-an-item card: a slim bar when collapsed */
+.add-section {
+  padding: 16px 24px;
+}
+
+.add-section[open] {
+  padding: 24px;
+}
+
+.add-section > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 1.15rem;
+  font-weight: 700;
+  list-style: none;
+  cursor: pointer;
+}
+
+.add-section > summary::-webkit-details-marker {
+  display: none;
+}
+
+.add-section > summary::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  margin-right: 4px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.add-section[open] > summary {
+  margin-bottom: 16px;
+}
+
+.add-section[open] > summary::after {
+  transform: rotate(-135deg);
+}
+
+/* Filters and task groups */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-bottom: 16px;
+}
+
+.filters select {
+  width: auto;
+  min-width: 150px;
+}
+
+.check-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.check-filter input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.filters .link-button {
+  margin-left: auto;
+  font-size: 0.9rem;
+}
+
+.task-group + .task-group {
+  margin-top: 24px;
+}
+
+.group-title {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.group-overdue .group-title {
+  color: var(--error);
+}
+
+/* Day pickers (class meetings and repeating tasks) */
+.day-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.day-chip {
+  position: relative;
+  cursor: pointer;
+}
+
+.day-chip input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  margin: 0;
+  opacity: 0;
+}
+
+.day-chip span {
+  display: inline-block;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--input-bg);
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.day-chip input:checked + span {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.day-chip input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.field-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.repeat-options {
+  display: grid;
+  gap: 16px;
+}
+
+/* Calendar */
+.calendar-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.calendar-head h2 {
+  margin: 0;
+}
+
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-nav button {
+  font-size: 1rem;
+  line-height: 1.1;
+}
+
+.cal-title {
+  min-width: 9.5rem;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.cal-dow {
+  padding: 4px 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+button.cal-day,
+button.cal-day:hover {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-self: stretch;
+  width: 100%;
+  gap: 4px;
+  min-height: 96px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--input-bg);
+  color: var(--ink);
+  font-weight: 400;
+  text-align: left;
+}
+
+button.cal-day:hover {
+  background: var(--accent-soft);
+}
+
+.cal-day.is-other-month {
+  opacity: 0.45;
+}
+
+button.cal-day.is-selected {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.cal-num {
+  display: grid;
+  place-items: center;
+  align-self: flex-start;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.cal-day.is-today .cal-num {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.cal-chips {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.chip {
+  display: block;
+  padding: 1px 6px;
+  overflow: hidden;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cal-more {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.chip-assignment {
+  background: var(--assignment-bg);
+  color: var(--assignment-ink);
+}
+
+.chip-test {
+  background: var(--test-bg);
+  color: var(--test-ink);
+}
+
+.chip-event {
+  background: var(--event-bg);
+  color: var(--event-ink);
+}
+
+.chip-class {
+  border-left: 3px solid var(--muted);
+  background: var(--class-bg);
+  color: var(--class-ink);
+}
+
+.day-detail {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.day-detail h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.detail-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.detail-item {
+  display: grid;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 10px;
+}
+
+.detail-item span {
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 16px 0 0;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  list-style: none;
+}
+
+.swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 6px;
+  border-radius: 4px;
+  vertical-align: -1px;
+}
+
+@media (max-width: 640px) {
+  .app {
+    width: calc(100% - 20px);
+  }
+
+  button.cal-day,
+  button.cal-day:hover {
+    align-items: center;
+    min-height: 56px;
+    padding: 4px 2px;
+  }
+
+  .cal-num {
+    align-self: center;
+  }
+
+  .cal-chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 3px;
+  }
+
+  .chip {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border-left-width: 0;
+    border-radius: 50%;
+    font-size: 0;
+  }
+
+  .chip-class {
+    background: var(--muted);
+  }
+
+  .cal-more {
+    display: none;
+  }
+}
+
+/* Two-column layout: calendar and add form on the left, a slim Upcoming list on the right */
+#auth {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 20px;
+  align-items: start;
+}
+
+.side-col {
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .side-col {
+    position: static;
+    max-height: none;
+    overflow: visible;
   }
 }

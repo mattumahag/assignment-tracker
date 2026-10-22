@@ -5,14 +5,270 @@
     "hash": "cd054e36102168710572c7f3d8903be74edf1e73afa3405738bc5d54da9359ff",
     "items": [
       {
+        "id": "item-1792077601315",
+        "title": "Homework 4",
+        "className": "AST205",
+        "type": "assignment",
+        "dueDate": "2026-10-20",
+        "complete": true,
+        "completedAt": 1792636514971,
+        "seriesId": ""
+      },
+      {
         "id": "item-1792031952876",
         "title": "t",
         "className": "t",
         "type": "assignment",
         "dueDate": "2026-10-21",
         "complete": true,
-        "completedAt": 1792034620328
+        "completedAt": 1792034620328,
+        "seriesId": ""
+      },
+      {
+        "id": "item-1792077424452",
+        "title": "Homework 2",
+        "className": "CSE360",
+        "type": "assignment",
+        "dueDate": "2026-10-23",
+        "complete": true,
+        "completedAt": 1792639713061,
+        "seriesId": ""
+      },
+      {
+        "id": "item-1792077486316",
+        "title": "Homework 3",
+        "className": "CSE320",
+        "type": "assignment",
+        "dueDate": "2026-10-23",
+        "complete": true,
+        "completedAt": 1792077489071,
+        "seriesId": ""
+      },
+      {
+        "id": "item-1792077501516",
+        "title": "Homework 3",
+        "className": "CSE320",
+        "type": "assignment",
+        "dueDate": "2026-10-25",
+        "complete": false,
+        "completedAt": null,
+        "seriesId": ""
+      },
+      {
+        "id": "item-1792077515599",
+        "title": "Homework 4",
+        "className": "CSE320",
+        "type": "assignment",
+        "dueDate": "2026-10-25",
+        "complete": true,
+        "completedAt": 1792638941008,
+        "seriesId": ""
+      },
+      {
+        "id": "item-1792639729377",
+        "title": "Homework 2",
+        "className": "CSE360",
+        "type": "assignment",
+        "dueDate": "2026-10-26",
+        "complete": false,
+        "completedAt": null,
+        "seriesId": ""
+      },
+      {
+        "id": "item-1792077550648",
+        "title": "Midterm 2",
+        "className": "CSE337",
+        "type": "test",
+        "dueDate": "2026-10-26",
+        "complete": true,
+        "completedAt": 1792639894113,
+        "seriesId": ""
+      },
+      {
+        "id": "item-1792077615398",
+        "title": "Homework 5",
+        "className": "AST205",
+        "type": "assignment",
+        "dueDate": "2026-10-27",
+        "complete": false,
+        "completedAt": null,
+        "seriesId": ""
+      },
+      {
+        "id": "item-1792639917144",
+        "title": "Midterm 2",
+        "className": "CSE337",
+        "type": "test",
+        "dueDate": "2026-10-28",
+        "complete": false,
+        "completedAt": null,
+        "seriesId": ""
+      },
+      {
+        "id": "item-1792639766177",
+        "title": "Homework 4",
+        "className": "CSE360",
+        "type": "assignment",
+        "dueDate": "2026-10-30",
+        "complete": false,
+        "completedAt": null,
+        "seriesId": ""
+      },
+      {
+        "id": "item-1792077571799",
+        "title": "Homework 2",
+        "className": "CSE337",
+        "type": "assignment",
+        "dueDate": "2026-10-31",
+        "complete": true,
+        "completedAt": 1792639927944,
+        "seriesId": ""
+      },
+      {
+        "id": "item-1792639841444",
+        "title": "Homework 2",
+        "className": "CSE337",
+        "type": "assignment",
+        "dueDate": "2026-10-31",
+        "complete": false,
+        "completedAt": null,
+        "seriesId": ""
+      },
+      {
+        "id": "item-1792639511231",
+        "title": "Homework 4",
+        "className": "CSE320",
+        "type": "assignment",
+        "dueDate": "2026-11-01",
+        "complete": false,
+        "completedAt": null,
+        "seriesId": ""
+      },
+      {
+        "id": "item-1792639990843",
+        "title": "Midterm 2",
+        "className": "AST205",
+        "type": "test",
+        "dueDate": "2026-11-03",
+        "complete": false,
+        "completedAt": null,
+        "seriesId": ""
+      },
+      {
+        "id": "item-1792639797793",
+        "title": "Midterm 2",
+        "className": "CSE360",
+        "type": "test",
+        "dueDate": "2026-11-09",
+        "complete": false,
+        "completedAt": null,
+        "seriesId": ""
+      },
+      {
+        "id": "item-1792639745094",
+        "title": "Homework 3",
+        "className": "CSE360",
+        "type": "assignment",
+        "dueDate": "2026-11-11",
+        "complete": false,
+        "completedAt": null,
+        "seriesId": ""
+      },
+      {
+        "id": "item-1792639543928",
+        "title": "Homework 5",
+        "className": "CSE320",
+        "type": "assignment",
+        "dueDate": "2026-11-15",
+        "complete": false,
+        "completedAt": null,
+        "seriesId": ""
+      },
+      {
+        "id": "item-1792639678828",
+        "title": "Midterm 2",
+        "className": "CSE320",
+        "type": "test",
+        "dueDate": "2026-11-19",
+        "complete": false,
+        "completedAt": null,
+        "seriesId": ""
+      },
+      {
+        "id": "item-1792639582461",
+        "title": "Homework 6",
+        "className": "CSE320",
+        "type": "assignment",
+        "dueDate": "2026-11-25",
+        "complete": false,
+        "completedAt": null,
+        "seriesId": ""
+      },
+      {
+        "id": "item-1792639649694",
+        "title": "Lab 3",
+        "className": "CSE320",
+        "type": "assignment",
+        "dueDate": "2026-11-27",
+        "complete": false,
+        "completedAt": null,
+        "seriesId": ""
+      },
+      {
+        "id": "item-1792639615595",
+        "title": "Homework 7",
+        "className": "CSE320",
+        "type": "assignment",
+        "dueDate": "2026-12-04",
+        "complete": false,
+        "completedAt": null,
+        "seriesId": ""
       }
-    ]
+    ],
+    "classes": [
+      "AST205",
+      "CSE320",
+      "CSE337",
+      "CSE360",
+      "LIN200"
+    ],
+    "schedules": {
+      "AST205": {
+        "days": [
+          2,
+          4
+        ],
+        "start": "11:00",
+        "end": "12:20",
+        "until": "2026-12-07"
+      },
+      "CSE320": {
+        "days": [
+          2,
+          4
+        ],
+        "start": "15:30",
+        "end": "16:50",
+        "until": "2026-12-07"
+      },
+      "CSE337": {
+        "days": [
+          1,
+          3
+        ],
+        "start": "08:00",
+        "end": "09:20",
+        "until": "2026-12-07"
+      },
+      "CSE360": {
+        "days": [
+          1,
+          3
+        ],
+        "start": "17:00",
+        "end": "18:20",
+        "until": "2026-12-07"
+      }
+    }
   }
 }
